@@ -240,7 +240,8 @@ function NewPosition(t, leftPos, iAct) {
         NewHfin = Math.min(NewHfin, LesActions[iAct].Periodes[idxClick + 1].Hfin);
     if (idxClick > 0)
         NewHfin = Math.max(NewHfin, LesActions[iAct].Periodes[idxClick - 1].Hfin);
-    LesActions[iAct].Periodes[idxClick].Hfin = Math.floor(NewHfin);
+    // LBR to block end time action 
+    // LesActions[iAct].Periodes[idxClick].Hfin = Math.floor(NewHfin);
     TracePeriodes(iAct);
 
 }

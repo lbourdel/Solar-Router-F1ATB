@@ -126,13 +126,14 @@ void Setup_Enphase() {
 void LectureEnphase() {  //Lecture des consommations
   int Num_portIQ = 443;
   String JsonEnPhase = "";
+  String JsonEnPhaseReadings = "";
   String host = IP2String(RMSextIP);
   if (TokenEnphase.length() > 50 && EnphaseUser != "") {  //Connexion pour firmware V7
     if ((millis() - lastTokenUpdate) > 2592000000) {      //Tout les 30 jours on recherche un nouveau Token //SR19
       lastTokenUpdate = millis();                         // overflow compatible!                                              //SR19
       Setup_Enphase();
     }
-
+    // /ivp/meters/reports/consumption
     clientSecu.setInsecure();  //skip verification
     if (!clientSecu.connect(host.c_str(), Num_portIQ, 3000)) {
       StockMessage("Connection failed to Envoy-S server! : " + host);
@@ -160,9 +161,39 @@ void LectureEnphase() {  //Lecture des consommations
         char c = clientSecu.read();
         Serial.write(c);
       }
-
       clientSecu.stop();
     }
+
+    // /ivp/meters/readings
+    // clientSecu.setInsecure();  //skip verification
+    // if (!clientSecu.connect(host.c_str(), Num_portIQ)) {
+    //   StockMessage("Connection failed to Envoy-S server! : " + host);
+    // } else {
+    //   //Serial.println("Connected to Envoy-S server!");
+    //   clientSecu.println("GET https://" + host + "/ivp/meters/readings HTTP/1.0");
+    //   clientSecu.println("Host: " + host);
+    //   clientSecu.println("Accept: application/json");
+    //   clientSecu.println("Authorization: Bearer " + TokenEnphase);
+    //   clientSecu.println("Connection: close");
+    //   clientSecu.println();
+
+    //   String line = "";
+    //   while (clientSecu.connected()) {
+    //     line = clientSecu.readStringUntil('\n');
+    //     if (line == "\r") {
+    //       //Serial.println("headers received");
+    //       JsonEnPhaseReadings = "";
+    //     }
+    //     JsonEnPhaseReadings += line;
+    //   }
+    //   // if there are incoming bytes available
+    //   // from the server, read them and print them:
+    //   while (clientSecu.available()) {
+    //     char c = clientSecu.read();
+    //     Serial.write(c);
+    //   }
+    //   clientSecu.stop();
+    // }
   } else {  // Connexion Envoy V5
     // Use WiFiClient class to create TCP connections http
     WiFiClient clientFirmV5;
@@ -182,6 +213,7 @@ void LectureEnphase() {  //Lecture des consommations
         return;
       }
     }
+
     timeout = millis();
     String line;
     // Lecture des données brutes distantes
@@ -217,6 +249,22 @@ void LectureEnphase() {  //Lecture des consommations
     PVAI_M_inst = 0;
     PVAS_M_inst = int(PvaReseau);
   }
+
+
+  // String ReadingProd = PrefiltreJson("eid", "704643328", JsonEnPhaseReadings);
+  // Serial.println("ReadingProd: " + ReadingProd);
+  // String activePowerProd = StringJson("activePower", ReadingProd);
+  // // int activePowerProd = IntJson("activePower", ReadingProd);
+  // Serial.println("activePowerProd" + activePowerProd);
+
+  // String ReadingInj = PrefiltreJson("eid", "704643584", JsonEnPhaseReadings);
+  // Serial.println("ReadingInj: " + ReadingInj);
+  // float activePowerInj = (ValJson("activePower", ReadingInj));
+  // Serial.println( activePowerInj);
+
+
+
+
   Pva_valide = true;
   filtre_puissance();
   float PowerFactor = 0;

@@ -58,9 +58,10 @@ function LoadData() {
         GID('PMS_M').innerHTML = LaVal(PuisMaxS_M);
         GID('PMI_M').innerHTML = LaVal(PuisMaxI_M);
 
-        LastPW_M = parseFloat(G1[0] - G1[1]);
-        LastPVA_M = parseFloat(G1[2] - G1[3]);
-
+      // LBR LastPW_M = parseFloat(G1[0] - G1[1]);
+      // LBR LastPVA_M = parseFloat(G1[2] - G1[3]);
+        LastPW_M=parseFloat(G1[8]); // PactProd
+        LastPVA_M=parseFloat(G1[9]); // PactConso_M
 
         var Tarif = ["NON_DEFINI", "PLEINE", "CREUSE", "BLEU", "BLANC", "ROUGE"];
         var couleur = ["#" + Koul[Coul_Tab][3], "#f00", "#0f0", "#00bfff", "#fff", "#f00"];

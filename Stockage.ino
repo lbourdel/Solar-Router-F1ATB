@@ -36,6 +36,10 @@ void RAZ_Histo_Conso() {
   EEPROM.writeULong(adr_E_M_injecte0, 0);
   EEPROM.writeString(adr_DateCeJour, "");
   EEPROM.writeUShort(adr_lastStockConso, 0);
+  // LBR to remove all EEPROM 
+  // for (int i = adr_ParaActions; i < EEPROM_SIZE; i+=4) {
+  //   EEPROM.writeLong(i, 0);
+  // }
   EEPROM.commit();
 }
 
@@ -114,9 +118,10 @@ void JourHeureChange() {
     DATE = String(buffer);
   }
   HeureCouranteDeci = Int_Heure * 100 + Int_Minute * 10 / 6;
-  if (HeureCouranteDeci >= 599 && HeureCouranteDeci <= 600) {
+  if (HeureCouranteDeci >= 599 && HeureCouranteDeci <= 600) { // 06:00
+// LBR  if (HeureCouranteDeci >= 2199 && HeureCouranteDeci <= 2200) { // 22:00
     for (int i = 0; i < LesActionsLength; i++) {
-      LesActions[i].H_Ouvre = 0;  //RAZ temps equivalent ouverture à 6h du matin
+      LesActions[i].H_Ouvre = 0;  //RAZ temps equivalent ouverture à 6h du matin LBR
     }
   }
   if (old_Heure == 23 && Int_Heure == 0) {

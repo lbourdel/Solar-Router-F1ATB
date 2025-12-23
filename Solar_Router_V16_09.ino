@@ -250,6 +250,7 @@
 
 */
 
+//#define DEBUG_LBR true
 //Librairies
 #include <Arduino.h>
 #include <WiFi.h>
@@ -326,13 +327,13 @@ String Source_data = "NotDef";
 String SerialIn = "";
 String hostname = "";
 byte dhcpOn = 1;
-byte ModePara = 0;                                                     //0 = Minimal, 1= Expert
-byte ModeReseau = 0;                                                   //0 = Internet, 1= LAN only, 2 =AP pas de réseau
-byte Horloge = 0;                                                      //0=Internet, 1=Linky, 2=Interne, 3=IT 10ms/triac, 4=IT 20ms
-byte ESP32_Type = 0;                                                   //0=Inconnu,1=Wroom seul,2=Wroom 1 relais,3=Wroom 4 relais,product4=Wroom+Ecran320*240,10=ESP32-ETH01
-byte LEDgroupe = 0;                                                    //0:pas de LED,1à9 pour les LED. 10 et 11 pour les écrans  OLED
-byte LEDyellow[] = { 0, 18, 4, 2, 0, 0, 0, 0, 0, 0, 18, 4, 18, 4 };    //Ou SDA pour OLED
-byte LEDgreen[] = { 0, 19, 16, 4, 0, 0, 0, 0, 0, 0, 19, 32, 19, 32 };  //ou SCL pour OLED
+byte ModePara = 0;    //0 = Minimal, 1= Expert
+byte ModeReseau = 0;  //0 = Internet, 1= LAN only, 2 =AP pas de réseau
+byte Horloge = 0;     //0=Internet, 1=Linky, 2=Interne, 3=IT 10ms/triac, 4=IT 20ms
+byte ESP32_Type = 1;  //0=Inconnu,1=Wroom seul,2=Wroom 1 relais,3=Wroom 4 relais,4=Wroom+Ecran320*240,10=ESP32-ETH01
+byte LEDgroupe = 0;   //0:pas de LED,1à9 pour les LED. 10 et 11 pour les écrans  OLED 
+byte LEDyellow[] = { 0, 18, 4, 2 ,0 , 0 ,0 ,0 ,0, 0, 18, 4, 18, 4}; //Ou SDA pour OLED
+byte LEDgreen[] = { 0, 19, 16, 4 ,0 ,0 ,0 ,0 ,0 ,0 ,19 ,32,19 ,32};  //ou SCL pour OLED
 unsigned long Gateway = 0;
 unsigned long masque = 4294967040;
 unsigned long dns = 0;
@@ -668,7 +669,9 @@ uint8_t bestBSSID[6];  //Meilleur en dBm adresse MAC
 
 //Ethernet
 int16_t EthernetBug = 0;
+#ifdef CONFIG_ETH_USE_ESP32_EMAC
 EMACDriver driver(ETH_PHY_LAN8720, 23, 18, 16);
+#endif
 
 WebServer server(80);  // Simple Web Server on port 80
 
@@ -928,6 +931,7 @@ void setup() {
   delay(100);
   MessageCommandes();
   LireSerial();
+#ifdef CONFIG_ETH_USE_ESP32_EMAC
   Ethernet.init(driver);
   if (String(ESP.getChipModel()) == "ESP32-D0WD") {  //certains ESP32U et WT32-ETH01
     TelnetPrintln("\nAncien modèle d'ESP32 que l'on trouve sur les cartes Ethernet WT32-ETH01 (branchez le câble) et certains ESP32U");
@@ -936,6 +940,7 @@ void setup() {
       ESP32_Type = 10;  //On force Ethernet
     }
   }
+#endif
   TelnetPrintln("InitGPIO");
   delay(500);
   LireSerial();
@@ -1376,9 +1381,11 @@ void loop() {
     if (tps - previousTimer2sMillis > 2000) {
       unsigned long dt = tps - previousTimer2sMillis;
       previousTimer2sMillis += 2000;  //Pou caler exactement à 2s
-      tabPw_Maison_2s[IdxStock2s] = PuissanceS_M - PuissanceI_M;
+      // tabPw_Maison_2s[IdxStock2s] = PuissanceS_M - PuissanceI_M;
+      tabPw_Maison_2s[IdxStock2s] = PactProd;
       tabPw_Triac_2s[IdxStock2s] = PuissanceS_T - PuissanceI_T;
-      tabPva_Maison_2s[IdxStock2s] = PVAS_M - PVAI_M;
+      // LBR tabPva_Maison_2s[IdxStock2s] = PVAS_M - PVAI_M;
+      tabPva_Maison_2s[IdxStock2s] = PactConso_M;
       tabPva_Triac_2s[IdxStock2s] = PVAS_T - PVAI_T;
       for (int i = 0; i < NbActions; i++) {
         if (Actif[i] != MODE_INACTIF) {
@@ -1568,12 +1575,17 @@ void GestionOverproduction() {  // chaque 200ms (adaptation 5 fois par seconde)
   bool forceOff;
   bool lissage = false;
   int Vout;
-  int pos = 0;
+  int pos=0;
+#ifdef DEBUG_LBR
+  time_t timestamp = time(NULL);
+  struct tm *pTime = localtime(&timestamp);    
   //Puissance est la puissance en entrée de maison. >0 si soutire. <0 si injecte
+#endif
   //Cas du Triac. Action 0
 
 
-  float Puissance = float(PuissanceS_M - PuissanceI_M );
+  float Puissance = float(PuissanceS_M - PuissanceI_M);
+// LBR    float Puissance = float(PactConso_M - PactProd); // essai sans lissage
   if (NbActions == 0) LissageLong = true;  //Cas d'un capteur seul et actions déporté sur autre ESP
   for (int i = 0; i < NbActions; i++) {
     Actif[i] = LesActions[i].Actif;                                                                                //0=Inactif,1=Decoupe ou On/Off, 2=Multi, 3= Train , 4=PWM, 5=Demi-Sinus
@@ -1588,6 +1600,7 @@ void GestionOverproduction() {  // chaque 200ms (adaptation 5 fois par seconde)
         forceOff = true;
       }
     }
+
     if (forceOff) {
       Type_En_Cours = 1;  //  on arrete
     } else {
@@ -1627,6 +1640,9 @@ void GestionOverproduction() {  // chaque 200ms (adaptation 5 fois par seconde)
           }
           LastErrorPw[i] = ErrorPw; 
           if (RetardF[i] < 100 - MaxTriacPw) { RetardF[i] = 100 - MaxTriacPw; }
+#ifdef DEBUG_LBR
+          Serial.println( RetardF[i], 5 );
+#endif
           if (ITmode < 0 && i == 0) RetardF[i] = 100;  //Triac pas possible sur synchro interne
         }
 
