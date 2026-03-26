@@ -76,8 +76,11 @@ async function LoadData() {
         GID('PMI_M').innerHTML = LaVal(PuisMaxI_M);
 
      
-        LastPW_M = parseFloat(G1[0]) - parseFloat(G1[1]);
-        LastPVA_M = parseFloat(G1[2]) - parseFloat(G1[3]);
+        // LBR LastPW_M = parseFloat(G1[0]) - parseFloat(G1[1]);
+        // LBR LastPVA_M = parseFloat(G1[2]) - parseFloat(G1[3]);
+        LastPW_M = parseFloat(G1[8]); // PactProd
+        LastPVA_M = parseFloat(G1[9]); // PactConso_M
+
 
         // Logique Tarif
         const Tarif = ["NON_DEFINI", "PLEINE", "CREUSE", "BLEU", "BLANC", "ROUGE"];
@@ -974,7 +977,7 @@ function Refresh_2s() {
     let Nom_simul = F.nomSondeMobile; 
     if (Source_data === "NotDef") Nom_simul = "(Puissance simulée. Source inconnue)"; 
     
-    if (Graphes_Select[0]) Plot('SVG_PW2sM', tabPW2sM, Koul[Coul_W][3], 'Puissance Active ' + Nom_simul + ' sur 10 mn en W', Koul[Coul_VA][3], 'Puissance Apparente sur 10 mn en VA');
+    if (Graphes_Select[0]) Plot('SVG_PW2sM', tabPW2sM, Koul[Coul_W][3], 'Puissance PV ' + Nom_simul + ' sur 10 mn en W', Koul[Coul_VA][3], 'Puissance Apparente sur 10 mn en W');
     
     if (biSonde && Graphes_Select[1]) {
       if (Source_data !== "NotDef") Nom_simul = GID("nomSondeFixe").innerHTML; 

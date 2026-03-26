@@ -1,8 +1,51 @@
 # LBR
+Use Arduino IDE
 Tools menu:
 Board ESP32S3 Dev Module
 Flash size 16MB
 Partition scheme Custom
+
+Flag CODE_UNUSED_LBR removes all unused source code
+Flag DEBUG_LBR activate serial print for servo algorithm
+In Arduino IDE:
+- set in File/Preferences/Sketchbook location : dir where are .INO source code
+- !!! source folder must be named as main filename i.e. .../Solar_Router/Solar_Router.ino !!!
+- set in File/Preferences/Additional boards manager !!! take latest version from github !!! :
+https://espressif.github.io/arduino-esp32/package_esp32_index.json
+https://github.com/espressif/arduino-esp32/releases/download/3.3.1/package_esp32_dev_index.json
+or
+https://espressif.github.io/arduino-esp32/package_esp32_index.json
+
+- set in Tools/Board manager to "esp32 by Espressif"
+V3.3.7
+
+- set in Tools/Board to "ESP32S3 dev module" or "ESP32-S3-WROOM-1":
+!!! don't take ESP32-dev but ESP32S3 Dev Module !!!
+Model used for ECS:
+    ESP32-S3-WROOM-1-N16R8
+    Flash 16MB
+    PSRAM 8MB
+    https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf
+- install in Tools/Manage libraries
+    * DallasTemperature by Miles Burton
+    * EthernetESP32 by Juraj Andrassy
+    * LovyanGFX by lovyan03
+    * OneWire by Jim Studt, ..
+    * PubSubClient by Nick O'Leary
+    * UrlEncode by MasayukiSugahara
+- if needed, patch LovyanGFX lib as described: https://github.com/lovyan03/LovyanGFX/commit/ac9198d
+
+API WEB:
+http://192.168.1.125/ActionsUpdateAction?NumAction=1&periode=1&value=600
+NumAction : 1 à X (0 reserved for Triac)
+periode : 0 à Y
+value : 0 à 2400 :  end time of selected period (0275=2h45)
+                    = start time of next period
+
+IDE Options:
+compile_commands.json:
+   "-DARDUINO_FQBN=\"esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=default,MSCOnBoot=default,DFUOnBoot=default,UploadMode=default,CPUFreq=240,FlashMode=qio,FlashSize=16M,PartitionScheme=custom,DebugLevel=none,PSRAM=disabled,LoopCore=1,EventsCore=1,EraseFlash=all,JTAGAdapter=default,ZigbeeMode=default\"",
+   "-DESP32=ESP32"
 
 # ⚡ Routeur Photovoltaïque F1ATB
 
