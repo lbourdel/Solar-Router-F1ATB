@@ -1,3 +1,9 @@
+# LBR
+Tools menu:
+Board ESP32S3 Dev Module
+Flash size 16MB
+Partition scheme Custom
+
 # ⚡ Routeur Photovoltaïque F1ATB
 
 Routeur photovoltaïque basé sur **ESP32**, permettant d’optimiser l’autoconsommation d’une installation solaire en redirigeant les surplus de production vers des charges (chauffe-eau, chauffage, pompe, etc.) au lieu de les injecter sur le réseau.
