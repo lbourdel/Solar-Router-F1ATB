@@ -960,8 +960,8 @@ function Refresh_2s() {
   if (tabPW2sM.length > 0) {
     tabPW2sM.shift(); 
     tabPW2sM.shift(); 
-    tabPW2sM.push(LastPW_M);
-    tabPW2sM.push(LastPVA_M);
+    tabPW2sM.push(LastPW_M); // PactProd
+    tabPW2sM.push(LastPVA_M); // PactConso_M
     
     // Ajout d'une vérification pour biSonde avant de manipuler tabPW2sT
     if (biSonde) {
