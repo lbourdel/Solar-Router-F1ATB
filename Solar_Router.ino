@@ -1494,7 +1494,7 @@ void loop() {
       //Discovery message pour MQTT (if HA restart)
       Discovered = false;
       //Info Serial et Telnet
-      MessageCommandes();
+      // MessageCommandes();
     }
 
 
@@ -1579,7 +1579,7 @@ void loop() {
     previousWifiMillis = tps;
 
     JourHeureChange();
-    TelnetPrintln("\nDate : " + DATE);
+    // TelnetPrintln("\nDate : " + DATE);
     if (ESP32_Type < 10 || ESP32_Type ==101) {  //ESP32 en WIFI
       if (WiFi.getMode() == WIFI_STA) {
         if (WiFi.waitForConnectResult(10000) != WL_CONNECTED) {
@@ -1590,11 +1590,11 @@ void loop() {
           WIFIbug = 0;
         }
 
-        PrintScroll("Signal WiFi: " + String(WiFi.RSSI()) + "dBm");
-        String msg = "";
-        msg = "IPV4 : " + WiFi.localIP().toString();
-        if (WiFi.globalIPv6().toString().length() > 4) msg += "  *  IPV6 : " + WiFi.globalIPv6().toString();  // voir selon place dispo sur écran
-        PrintScroll(msg);
+        // PrintScroll("Signal WiFi: " + String(WiFi.RSSI()) + "dBm");
+        // String msg = "";
+        // msg = "IPV4 : " + WiFi.localIP().toString();
+        // if (WiFi.globalIPv6().toString().length() > 4) msg += "  *  IPV6 : " + WiFi.globalIPv6().toString();  // voir selon place dispo sur écran
+        // PrintScroll(msg);
         if (WIFIbug > 0) PrintScroll("WiFi Bug # :" + String(WIFIbug));
         if (WIFIbug > ComSurv) {  //Timeout sans WIFI =Reset
           TelnetPrintln("Timeout sans WIFI ==> Reset");
@@ -1640,13 +1640,13 @@ void loop() {
       delay(5000);
       ReseT("Puissances non reçues => Reset ");
     }
-    TelnetPrintln("Puissance reçue : " + OK);
-    TelnetPrintln("Charge Lecture RMS (coeur 0) en ms - Min : " + String(int(previousTimeRMSMin)) + " Moy : " + String(int(previousTimeRMSMoy)) + "  Max : " + String(int(previousTimeRMSMax)));
-    TelnetPrintln("Charge Boucle générale (coeur 1) en ms - Min : " + String(int(previousLoopMin)) + " Moy : " + String(int(previousLoopMoy)) + "  Max : " + String(int(previousLoopMax)));
-    TelnetPrintln("Mémoire RAM libre actuellement: " + String(esp_get_free_internal_heap_size()) + " byte");
-    TelnetPrintln("Mémoire RAM libre minimum: " + String(esp_get_minimum_free_heap_size()) + " byte");
-    float DureeOn = float(T_On_seconde) / 3600.0;
-    TelnetPrintln("ESP32 ON depuis : " + String(DureeOn) + " heures");
+    // TelnetPrintln("Puissance reçue : " + OK);
+    // TelnetPrintln("Charge Lecture RMS (coeur 0) en ms - Min : " + String(int(previousTimeRMSMin)) + " Moy : " + String(int(previousTimeRMSMoy)) + "  Max : " + String(int(previousTimeRMSMax)));
+    // TelnetPrintln("Charge Boucle générale (coeur 1) en ms - Min : " + String(int(previousLoopMin)) + " Moy : " + String(int(previousLoopMoy)) + "  Max : " + String(int(previousLoopMax)));
+    // TelnetPrintln("Mémoire RAM libre actuellement: " + String(esp_get_free_internal_heap_size()) + " byte");
+    // TelnetPrintln("Mémoire RAM libre minimum: " + String(esp_get_minimum_free_heap_size()) + " byte");
+    // float DureeOn = float(T_On_seconde) / 3600.0;
+    // TelnetPrintln("ESP32 ON depuis : " + String(DureeOn) + " heures");
     //RTE
     if (ModeReseau == 0) {  //Valabe pour Ethernet également
       Call_RTE_data();
@@ -1657,7 +1657,7 @@ void loop() {
       if (LTARF.indexOf("BLANC") >= 0) Ltarf += 8;
       if (LTARF.indexOf("ROUGE") >= 0) Ltarf += 16;
       LTARFbin = Ltarf;
-      if (LTARF != "") PrintScroll(LTARF);
+    //   if (LTARF != "") PrintScroll(LTARF);
     }
     //Test pulse Zc Triac
     if (ITmode < 0 && pTriac > 0) {
@@ -1724,6 +1724,7 @@ void GestionOverproduction() {  // chaque 200ms (adaptation 5 fois par seconde)
         RetardF[i] = 100.0 - MaxTriacPw;  //On avec ouverture limitée en forcé prioritaire ou suivant la période
       } else {                            // régulation 3 (PW) ou 4 (Triac)
 
+        Ki = float(LesActions[i].Ki) / 10000.0;
         //Coef Integral ou réactivité
         Ki = float(LesActions[i].Ki) / 10000.0;
         if (Puissance < SeuilPw && ReacCACSI > 1 && ReacCACSI < 100) Ki = Ki * GainCACSI;  //On boost si besoin l'écart (*2, 4 ou 8)
@@ -1763,8 +1764,12 @@ void GestionOverproduction() {  // chaque 200ms (adaptation 5 fois par seconde)
     }
     Retard[i] = round(RetardF[i]);         //Valeure entiere pour piloter le Triac et les relais
     if (RetardVx == i && Actif[i] != 0) {  //Affiche calcul retards port série ou Telnet
-      char buffer[50];
-      snprintf(buffer, sizeof(buffer), "Ecart= %4.0fW Retard= %3u P= %4.1f I= %4.1f D= %4.1f", ErrorPw, Retard[i], Propor[i], IntegrErrorPw[i], DeriveF[i]);
+      char buffer[200];
+      if (LesActions[i].PID && ModePara == 1)
+        snprintf(buffer, sizeof(buffer), "Action:%d PuissanceS_M=%04u PuissanceI_M=%04u Puissance=%04.0f Ecart=%04.0f Retard=%04u P=%.2f I=%.2f D=%.2f Ki=%2.5f Kp=%2.5f Kd=%2.5f", i, PuissanceS_M, PuissanceI_M, Puissance, ErrorPw, Retard[i], Propor[i], IntegrErrorPw[i], DeriveF[i], Ki, Kp, Kd);
+      else
+        snprintf(buffer, sizeof(buffer), "Action:%d PuissanceS_M=%04u PuissanceI_M=%04u Puissance=%04.0f Ecart=%04.0f Retard=%04u D=%.2f Ki=%2.5f", i, PuissanceS_M, PuissanceI_M, Puissance, ErrorPw, Retard[i], DeriveF[i], Ki);
+
       TelnetPrintln(String(buffer));
     }
     if (Retard[i] == 100) {  // Force en cas d'arret des IT
