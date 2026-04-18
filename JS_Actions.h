@@ -458,6 +458,7 @@ function NewPosition(t, leftPos, iAct) {
     }
     
     // Affecte la nouvelle fin de période (arrondie à l'entier pour les centièmes d'heure)
+    // LBR to block end time action set comment below line
     F.Actions[iAct].Periodes[idxClick].Hfin = Math.floor(NewHfin);
     
     // Redessine l'affichage des périodes

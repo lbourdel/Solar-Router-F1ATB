@@ -64,7 +64,8 @@ public:
 private:
   void initBus() {
     auto cfg = _bus.config();
-    cfg.spi_host = HSPI_HOST;
+    // cfg.spi_host = HSPI_HOST;
+    cfg.spi_host = SPI2_HOST;
     cfg.spi_mode = 3;  // 3 pour ST7789, 0 pour ILI9341(? à tester)
     cfg.freq_write = 40000000;
     cfg.freq_read = 16000000;
@@ -159,12 +160,14 @@ private:
 
       cfg.freq = 1000000;
       if (type == S028_SCREEN_ILI9341_BL21 || type == S028_SCREEN_ST7789_BL21) {
-        cfg.spi_host = VSPI_HOST;
+        // cfg.spi_host = VSPI_HOST;
+        cfg.spi_host = SPI3_HOST;
         cfg.pin_sclk = S028_TOUCH_SCK;
         cfg.pin_mosi = S028_TOUCH_MOSI;
         cfg.pin_miso = S028_TOUCH_MISO;
       } else {
-        cfg.spi_host = HSPI_HOST;
+        // cfg.spi_host = HSPI_HOST;
+        cfg.spi_host = SPI2_HOST;
         cfg.pin_sclk = S024_TOUCH_SCK;
         cfg.pin_mosi = S024_TOUCH_MOSI;
         cfg.pin_miso = S024_TOUCH_MISO;

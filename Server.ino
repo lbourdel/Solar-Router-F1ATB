@@ -24,6 +24,8 @@ void Init_Server() {
   server.on("/ActionsJS3", handleActionsJS3);
   server.on("/ActionsJS4", handleActionsJS4);
   server.on("/PinsActionsJS", handlePinsActionsJS);
+  // LBR to handle personal API to change hfin action
+  server.on("/ActionsUpdateAction", handleActionsUpdateAction);
   server.on("/ShowAction", handleShowAction);
   server.on("/UpdateK", handleUpdateK);
   server.on("/Brute", handleBrute);
@@ -33,7 +35,7 @@ void Init_Server() {
   server.on("/ajax_histo1an", handleAjaxHisto1an);
   server.on("/ajax_dataRMS", handleAjaxRMS);
   server.on("/ajax_dataESP32", handleAjaxESP32);
-  server.on("/ajax_data", handleAjaxData);
+  server.on("/ajax_data", handleAjaxData); // Page courbe 2mn Main
   server.on("/ajax_data10mn", handleAjaxData10mn);
   server.on("/ajax_etatActions", handleAjax_etatActions);
   server.on("/ajax_etatActionX", handleAjax_etatActionX);
@@ -405,7 +407,9 @@ void handleAjaxData() {  // Données page d'accueil
   String S = LesTemperatures();
   S = "Deb" + RS + DateLast + RS + Source_data + RS + LTARF + RS + STGEt + RS + S + RS + String(Pva_valide);
   S += GS + String(PuissanceS_M) + RS + String(PuissanceI_M) + RS + String(PVAS_M) + RS + String(PVAI_M);
-  S += RS + String(EnergieJour_M_Soutiree) + RS + String(EnergieJour_M_Injectee) + RS + String(Energie_M_Soutiree) + RS + String(Energie_M_Injectee);
+  // S += RS + String(EnergieJour_M_Soutiree) + RS + String(EnergieJour_M_Injectee) + RS + String(Energie_M_Soutiree) + RS + String(Energie_M_Injectee);
+  // LBR to add injection and production data
+  S += RS + String(EnergieJour_M_Soutiree) + RS + String(EnergieJour_M_Injectee) + RS + String(Energie_M_Soutiree) + RS + String(Energie_M_Injectee) + RS + String(PactProd) + RS + String(PactConso_M);
   if (Source_data == "UxIx2" || ((Source_data == "ShellyEm" || Source_data == "ShellyPro") && EnphaseSerial.toInt() != 3)) {  // UxIx2 ou Shelly monophasé avec 2 sondes
     S += GS + String(PuissanceS_T) + RS + String(PuissanceI_T) + RS + String(PVAS_T) + RS + String(PVAI_T);
     S += RS + String(EnergieJour_T_Soutiree) + RS + String(EnergieJour_T_Injectee) + RS + String(Energie_T_Soutiree) + RS + String(Energie_T_Injectee);
@@ -560,7 +564,74 @@ void handleActionsJS4() {
   server.send(200, "text/javascript", ActionsJS4);
 }
 
+// LBR
+// IP_ESP32/ActionsUpdateLBR?NumAction=1&value=60&periode=0
+// NumAction=1 : 1ere action (1ere ligne)
+// periode=0 premiere periode
+// value= hfin de la periode entre 0 et 2400
+// met hdeb(periode+1)=hfin(periode)
+// value=200=> 2h00 250=>2h30 1275=>12:45
+void handleActionsUpdateAction() {
+  int NumAction = server.arg("NumAction").toInt();
+  int Value = server.arg("value").toInt();
+  int Periode = server.arg("periode").toInt();
+  String S = "";
+  if( NumAction==0 || NumAction >= NbActions )
+  {
+    S = "Bad NumAction";
+  }
+  else if( Periode >= LesActions[NumAction].NbPeriode )
+  {
+    S = "periode too high";
+  }
+  else if( Value > 2400 )
+  {
+    S = "value too high";
+  }
+  else if( Value > LesActions[NumAction].Hfin[Periode+1] )
+  {
+    S = "hfin value overlap next periode";
+  }
+  else if( Value <= LesActions[NumAction].Hdeb[Periode] )
+  {
+    S = "hfin value overlap Hdeb";
+  }
+  else{
+    S = "";
+    LesActions[NumAction].Hfin[Periode] = Value;
+    LesActions[NumAction].Hdeb[Periode+1] = Value;
+    S += "NomAction" + RS;
+    S += String(LesActions[NumAction].Titre);
+    S += GS;
 
+    S += "NumAction" + RS;
+    S += String(NumAction);
+    S += GS;
+    S += "Value" + RS;
+    S += String(Value);
+    S += GS;
+    S += "Periode" + RS;
+    S += String(Periode);
+    S += GS;
+    S += "Hfin" + RS;
+    S += String( LesActions[NumAction].Hfin[Periode] );
+    S += GS;
+    S += "Hdeb periode suivante" + RS;
+    S += String( LesActions[NumAction].Hdeb[Periode+1] );
+
+    S += "Duree H<=" + RS;
+    S += String( LesActions[NumAction].Hmax[Periode] );
+
+    EcritureEnROM();
+    // int adresse_max = EcritureEnROM();
+    // S += "adresse_max EEPROM" + RS;
+    // S += String( adresse_max );
+  }
+
+  S += GS;
+  // server.sendHeader("Connection", "close");
+  server.send(200, "text/html", S);
+}
 
 void handlePinsActionsJS() {  // Pins disponibles
   String S = "var Pins=[0,-1];";
