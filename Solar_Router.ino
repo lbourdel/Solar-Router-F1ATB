@@ -1497,9 +1497,11 @@ void loop() {
     if (tps - previousTimer2sMillis > 2000) {
       unsigned long dt = tps - previousTimer2sMillis;
       previousTimer2sMillis += 2000;  //Pou caler exactement à 2s
-      tabPw_Maison_2s[IdxStock2s] = PuissanceS_M - PuissanceI_M;
+      // LBR tabPw_Maison_2s[IdxStock2s] = PuissanceS_M - PuissanceI_M;
+      tabPw_Maison_2s[IdxStock2s] = PactProd;
       tabPw_Triac_2s[IdxStock2s] = PuissanceS_T - PuissanceI_T;
-      tabPva_Maison_2s[IdxStock2s] = PVAS_M - PVAI_M;
+      // LBR tabPva_Maison_2s[IdxStock2s] = PVAS_M - PVAI_M;
+      tabPva_Maison_2s[IdxStock2s] = PactConso_M;
       tabPva_Triac_2s[IdxStock2s] = PVAS_T - PVAI_T;
       for (int i = 0; i < NbActions; i++) {
         if (Actif[i] != MODE_INACTIF) {
