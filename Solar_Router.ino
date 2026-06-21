@@ -357,7 +357,7 @@
 
 //Watchdog de 180 secondes. Le systeme se Reset si pas de dialoque avec le LINKY ou JSY-MK-194T/333 ou Enphase-Envoy pendant 180s
 //Watchdog for 180 seconds. The system resets if no dialogue with the Linky or  JSY-MK-194T/333 or Enphase-Envoy for 180s
-#define WDT_TIMEOUT 180
+#define WDT_TIMEOUT 520
 
 
 #define SER_BUF_SIZE 4096
@@ -491,10 +491,10 @@ long EAS_M_J0 = 0;  //Debut du jour energie active
 long EAI_M_J0 = 0;
 float Tension_T, Intensite_T, PowerFactor_T, Frequence;
 float Tension_M, Intensite_M, PowerFactor_M;
-long Energie_T_Soutiree = 0;
-long Energie_T_Injectee = 0;
-long Energie_M_Soutiree = 0;
-long Energie_M_Injectee = 0;
+long Energie_T_Soutiree = 0L;
+long Energie_T_Injectee = 0L;
+long Energie_M_Soutiree = 0L;
+long Energie_M_Injectee = 0L;
 long EnergieJour_T_Injectee = 0;
 long EnergieJour_M_Injectee = 0;
 long EnergieJour_T_Soutiree = 0;
@@ -616,7 +616,9 @@ long EASF09 = 0;
 long EASF10 = 0;
 
 //Paramètres for Enphase-Envoy-Smetered
-String TokenEnphase = "";
+// String TokenEnphase = "";
+// until May 2027 
+String TokenEnphase = "eyJraWQiOiI3ZDEwMDA1ZC03ODk5LTRkMGQtYmNiNC0yNDRmOThlZTE1NmIiLCJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiIxMjIzMTIwNzc2MDciLCJpc3MiOiJFbnRyZXoiLCJlbnBoYXNlVXNlciI6Im93bmVyIiwiZXhwIjoxODEzNDI0NTc0LCJpYXQiOjE3ODE4ODg1NzQsImp0aSI6ImQ1MzFhY2M3LTkxNDMtNDBjYy04ZWNlLWU1ZGM3NTZmNjRkOSIsInVzZXJuYW1lIjoibGJvdXJkZWxAeWFob28uZnIifQ.9vqp9wX8KnV9MTpWuDAE4HydGoddQG6fl4zOk1GsygCqNii3IEdjYtKTjmN_Tl_Tjdfmm_ED-ZMtRmxGeIC_og";
 String EnphaseUser = "";
 String EnphasePwd = "";
 String EnphaseSerial = "0";  //Sert égalemnet au Shelly comme numéro de voie
@@ -958,7 +960,7 @@ void setup() {
   esp_task_wdt_config_t wdt_config = {
     .timeout_ms = WDT_TIMEOUT * 1000,                 // Convertir le temps en millisecondes
     .idle_core_mask = (1 << portNUM_PROCESSORS) - 1,  // Bitmask of all cores, https://github.com/espressif/esp-idf/blob/v5.2.2/examples/system/task_watchdog/main/task_watchdog_example_main.c
-    .trigger_panic = true                             // Enable panic to restart ESP32
+    .trigger_panic = false                             // Enable panic to restart ESP32
   };
   // Initialisation de la WDT avec la structure de configuration
   ESP32_ERROR = esp_task_wdt_init(&wdt_config);
@@ -1384,7 +1386,7 @@ void Task_LectureRMS(void *pvParameters) {
       if (Source == "Enphase") {
         LectureEnphase();
         LastRMS_Millis = millis();
-        PeriodeProgMillis = 600 + ralenti;  //On s'adapte à la vitesse réponse Envoy-S metered
+        PeriodeProgMillis = 2000 + ralenti;  //On s'adapte à la vitesse réponse Envoy-S metered
       }
       if (Source == "SmartG") {
         LectureSmartG();
@@ -1638,7 +1640,7 @@ void loop() {
     } else {
       TelnetPrintln("Puissances non reçues => Reset ");
       delay(5000);
-      ReseT("Puissances non reçues => Reset ");
+      // ReseT("Puissances non reçues => Reset ");
     }
     // TelnetPrintln("Puissance reçue : " + OK);
     // TelnetPrintln("Charge Lecture RMS (coeur 0) en ms - Min : " + String(int(previousTimeRMSMin)) + " Moy : " + String(int(previousTimeRMSMoy)) + "  Max : " + String(int(previousTimeRMSMax)));
@@ -1668,7 +1670,7 @@ void loop() {
     } else {
       erreurTriac = false;
     }
-    if (ESP32_Type == 0) StockMessage("! Carte ESP32 non définie !");
+    // if (ESP32_Type == 0) StockMessage("! Carte ESP32 non définie !");
     if (pSerial == 0 && (Source == "UxIx2" || Source == "UxIx3" || Source == "Linky")) StockMessage("! Port série non défini !");
   }
 
