@@ -69,60 +69,62 @@ void Setup_Enphase() {
   } else {
     TelnetPrintln("Connexion  vers Envoy-S en firmware version 5");
   }
+  TelnetPrintln("Session_id:" + Session_id);
   // Obtention Token
   //********************
-  //  if (Session_id != "" && EnphaseSerial != "" && EnphaseUser != "") {
-  //    const char* server2Enphase = "entrez.enphaseenergy.com";
-  //    Host = String(server2Enphase);
-  //    adrEnphase = "https://" + Host + "/tokens";
-  //    requestBody = "{\"session_id\":\"" + Session_id + "\", \"serial_num\":" + EnphaseSerial + ", \"username\":\"" + EnphaseUser + "\"}";
-  //    TelnetPrintln("Essai connexion  Enlighten server 2 pour obtention token!");
-  //    clientSecu.setInsecure();  //skip verification
-  //    if (!clientSecu.connect(server2Enphase, 443, 13000))
-  //      StockMessage("Connection failed to :" + Host);
-  //    else {
-  //      TelnetPrintln("Connected to :" + Host);
-  //      clientSecu.println("POST " + adrEnphase + " HTTP/1.0");
-  //      clientSecu.println("Host: " + Host);
-  //      clientSecu.println("Content-Type: application/json");
-  //      clientSecu.println("content-length:" + String(requestBody.length()));
-  //      clientSecu.println("Connection: close");
-  //      clientSecu.println();
-  //      clientSecu.println(requestBody);
-  //      clientSecu.println();
-  //      TelnetPrintln("Attente user est connecté");
-  //      String line = "";
-  //      JsonToken = "";
-  //      while (clientSecu.connected()) {
-  //        line = clientSecu.readStringUntil('\n');
-  //        if (line == "\r") {
-  //          TelnetPrintln("headers 2 enlighten received");
-  //          JsonToken = "";
-  //        }
+   if (Session_id != "" && EnphaseSerial != "" && EnphaseUser != "") {
+     const char* server2Enphase = "entrez.enphaseenergy.com";
+     Host = String(server2Enphase);
+     adrEnphase = "https://" + Host + "/tokens";
+     requestBody = "{\"session_id\":\"" + Session_id + "\", \"serial_num\":" + EnphaseSerial + ", \"username\":\"" + EnphaseUser + "\"}";
+     TelnetPrintln("Essai connexion  Enlighten server 2 pour obtention token!");
+     clientSecu.setInsecure();  //skip verification
+     if (!clientSecu.connect(server2Enphase, 443, 13000))
+       StockMessage("Connection failed to :" + Host);
+     else {
+       TelnetPrintln("Connected to :" + Host);
+       clientSecu.println("POST " + adrEnphase + " HTTP/1.0");
+       clientSecu.println("Host: " + Host);
+       clientSecu.println("Content-Type: application/json");
+       clientSecu.println("content-length:" + String(requestBody.length()));
+       clientSecu.println("Connection: close");
+       clientSecu.println();
+       clientSecu.println(requestBody);
+       clientSecu.println();
+       TelnetPrintln("Attente user est connecté");
+       String line = "";
+       JsonToken = "";
+       while (clientSecu.connected()) {
+         line = clientSecu.readStringUntil('\n');
+         if (line == "\r") {
+           TelnetPrintln("headers 2 enlighten received");
+           JsonToken = "";
+         }
 
-  //       JsonToken += line;
-  //     }
-  //     // if there are incoming bytes available
-  //     // from the server, read them and print them:
-  //     while (clientSecu.available()) {
-  //       char c = clientSecu.read();
-  //       Serial.write(c);
-  //     }
-  //     clientSecu.stop();
-  //     JsonToken.trim();
-  //     TelnetPrintln("Token :" + JsonToken);
-  //     if (JsonToken.length() > 50) {
-  //       TokenEnphase = JsonToken;
-  //       previousTimeRMSMin = 1000;
-  //       previousTimeRMSMax = 1;
-  //       previousTimeRMSMoy = 1;
-  //       previousTimeRMS = millis();
-  //       LastRMS_Millis = millis();
-  //       PeriodeProgMillis = 1000;
-  //     }
-  //   }
-  // }
+        JsonToken += line;
+      }
+      // if there are incoming bytes available
+      // from the server, read them and print them:
+      while (clientSecu.available()) {
+        char c = clientSecu.read();
+        Serial.write(c);
+      }
+      clientSecu.stop();
+      JsonToken.trim();
+      TelnetPrintln("Token :" + JsonToken);
+      if (JsonToken.length() > 50) {
+        TokenEnphase = JsonToken;
+        previousTimeRMSMin = 1000;
+        previousTimeRMSMax = 1;
+        previousTimeRMSMoy = 1;
+        previousTimeRMS = millis();
+        LastRMS_Millis = millis();
+        PeriodeProgMillis = 1000;
+      }
+    }
+  }
 
+  TelnetPrintln("Token :" + TokenEnphase);
 }
 
 void LectureEnphase()
@@ -184,7 +186,7 @@ void LectureEnphase()
 
     if (!client.connect(host, 443))
     {
-      TelnetPrintln("TLS FAIL");
+      TelnetPrintln("TLS FAIL" + host);
       return;
     }
 
