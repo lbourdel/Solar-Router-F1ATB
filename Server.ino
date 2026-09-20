@@ -565,41 +565,56 @@ void handleActionsJS4() {
 }
 
 // LBR
-// IP_ESP32/ActionsUpdateLBR?NumAction=1&value=60&periode=0
+// f1atbecs.local/ActionsUpdateAction?NumAction=1&hfin=60&periode=3
+// f1atbecs.local/ActionsUpdateAction?NumAction=1&periode=3&type=1 => OFF
+// f1atbecs.local/ActionsUpdateAction?NumAction=1&periode=3&type=3 => PWM
 // NumAction=1 : 1ere action (1ere ligne)
-// periode=0 premiere periode
-// value= hfin de la periode entre 0 et 2400
+// periode=3 premiere periode
+// hfin= hfin de la periode entre 0 et 2400
 // met hdeb(periode+1)=hfin(periode)
-// value=200=> 2h00 250=>2h30 1275=>12:45
+// hfin=200=> 2h00 250=>2h30 1275=>12:45
 void handleActionsUpdateAction() {
   int NumAction = server.arg("NumAction").toInt();
-  int Value = server.arg("value").toInt();
-  int Periode = server.arg("periode").toInt();
+// 1. Read the type parameter safely 0=NO(pas utilisé),1=OFF,2=ON,3=PW,4=Triac
+  int Hfin = server.hasArg("hfin") ? server.arg("hfin").toInt() : 0;
+  int Periode = server.hasArg("periode") ? server.arg("periode").toInt() : 0;
+  int Type = server.hasArg("type") ? server.arg("type").toInt() : 0;
   String S = "";
-  if( NumAction==0 || NumAction >= NbActions )
+// 1. Fundamental Validation
+  if( NumAction == 0 || NumAction >= NbActions )
   {
     S = "Bad NumAction";
   }
-  else if( Periode >= LesActions[NumAction].NbPeriode )
+  else if( server.hasArg("periode") && Periode >= LesActions[NumAction].NbPeriode )
   {
     S = "periode too high";
   }
-  else if( Value > 2400 )
+  // 2. Validate Hfin ONLY if it was actually passed in the URL request
+  else if( server.hasArg("hfin") && Hfin > 2400 )
   {
-    S = "value too high";
+    S = "hfin too high";
   }
-  else if( Value > LesActions[NumAction].Hfin[Periode+1] )
+  else if( server.hasArg("hfin") && Hfin > LesActions[NumAction].Hfin[Periode+1] )
   {
     S = "hfin value overlap next periode";
   }
-  else if( Value <= LesActions[NumAction].Hdeb[Periode] )
+  else if( server.hasArg("hfin") && Hfin <= LesActions[NumAction].Hdeb[Periode] )
   {
     S = "hfin value overlap Hdeb";
   }
-  else{
+  else {
+    // Validation passed! Now apply updates safely
     S = "";
-    LesActions[NumAction].Hfin[Periode] = Value;
-    LesActions[NumAction].Hdeb[Periode+1] = Value;
+// 2. ONLY update the type array if the value is exactly 1 (OFF) or 3 (multi-sinus)
+    if (Type == 1 || Type == 3) 
+    {
+      LesActions[NumAction].Type[Periode] = Type; 
+    }
+    if( server.hasArg("periode") && server.hasArg("hfin") )
+    {
+      LesActions[NumAction].Hfin[Periode] = Hfin;
+      LesActions[NumAction].Hdeb[Periode+1] = Hfin;
+    }
     S += "NomAction" + RS;
     S += String(LesActions[NumAction].Titre);
     S += GS;
@@ -607,26 +622,31 @@ void handleActionsUpdateAction() {
     S += "NumAction" + RS;
     S += String(NumAction);
     S += GS;
-    S += "Value" + RS;
-    S += String(Value);
-    S += GS;
-    S += "Periode" + RS;
-    S += String(Periode);
-    S += GS;
-    S += "Hfin" + RS;
-    S += String( LesActions[NumAction].Hfin[Periode] );
-    S += GS;
-    S += "Hdeb periode suivante" + RS;
-    S += String( LesActions[NumAction].Hdeb[Periode+1] );
+    if(server.hasArg("type"))
+    {
+      S += "Type" + RS;
+      S += String(Type);
+      S += GS;
+    }
+    if( server.hasArg("periode") && server.hasArg("hfin") )
+    {
+      S += "Periode" + RS;
+      S += String(Periode);
+      S += GS;
+      S += "Hfin" + RS;
+      S += String( LesActions[NumAction].Hfin[Periode] );
+      S += GS;
+      S += "Hdeb periode suivante" + RS;
+      S += String( LesActions[NumAction].Hdeb[Periode+1] );
 
-    S += "Duree H<=" + RS;
-    S += String( LesActions[NumAction].Hmax[Periode] );
-
-    EcritureEnROM();
-    // int adresse_max = EcritureEnROM();
-    // S += "adresse_max EEPROM" + RS;
-    // S += String( adresse_max );
+      S += "Duree H<=" + RS;
+      S += String( LesActions[NumAction].Hmax[Periode] );
+    }
   }
+  EcritureEnROM();
+  // int adresse_max = EcritureEnROM();
+  // S += "adresse_max EEPROM" + RS;
+  // S += String( adresse_max );
 
   S += GS;
   // server.sendHeader("Connection", "close");

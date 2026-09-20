@@ -5,10 +5,9 @@
 uint32_t ipToInt(IPAddress ip) {                                                                  //SR19
   return uint32_t(ip[0] << 24) | uint32_t(ip[1] << 16) | uint32_t(ip[2] << 8) | uint32_t(ip[3]);  //SR19
 }
-
-void Setup_Enphase() {
-
-  //Résolution mDNS de http://envoy.local en adresse IP                                                                  //SR19
+void Resolve_EnphaseIP()
+{
+    //Résolution mDNS de http://envoy.local en adresse IP                                                                  //SR19
   //***************************************************                                                                  //SR19
 
   const char* host = "envoy";  //SR19
@@ -23,11 +22,18 @@ void Setup_Enphase() {
     if (envoyIP.toString() != "0.0.0.0") {                                                           //SR19
       StockMessage("IP Enphase : http://" + String(host) + ".local" + " -> " + envoyIP.toString());  //SR19
       RMSextIP = ipToInt(envoyIP);                                                                   //IP -> uint32                                                                         //SR19
+      // RMSextIP = ipToInt("192.168.1.210");                                                                   //IP -> uint32                                                                         //SR19
     } else {                                                                                         //SR19
       StockMessage("Échec! passerelle Enphase envoy déconnectée");                                   //SR19
       return;                                                   // SR19
     }
   }
+}
+
+void Setup_Enphase() {
+
+  Resolve_EnphaseIP();
+
   //Obtention Session ID
   //********************
   const char* server1Enphase = "enlighten.enphaseenergy.com";
@@ -111,7 +117,6 @@ void Setup_Enphase() {
       }
       clientSecu.stop();
       JsonToken.trim();
-      TelnetPrintln("Token :" + JsonToken);
       if (JsonToken.length() > 50) {
         TokenEnphase = JsonToken;
         previousTimeRMSMin = 1000;
@@ -131,8 +136,8 @@ void LectureEnphase()
 {
   static long LastwhDlvdCum = 0L;
   static long LastwhRcvdCum = 0L;
-  char host[16];
-  snprintf(host, sizeof(host), "%lu.%lu.%lu.%lu", (RMSextIP >> 24) & 0xFF, (RMSextIP >> 16) & 0xFF, (RMSextIP >> 8) & 0xFF, RMSextIP & 0xFF);
+  String host = IP2String(RMSextIP);
+  // snprintf(host, sizeof(host), "%lu.%lu.%lu.%lu", (RMSextIP >> 24) & 0xFF, (RMSextIP >> 16) & 0xFF, (RMSextIP >> 8) & 0xFF, RMSextIP & 0xFF);
 
   char baseRequest[50];
   snprintf(baseRequest, sizeof(baseRequest), "/ivp/meters/readings");
@@ -178,24 +183,37 @@ void LectureEnphase()
   lastCall = millis();
 
   {
-    NetworkClientSecure client;
-    client.setInsecure();
-    client.setTimeout(8000);
+    static NetworkClientSecure client;
 
     // StockMessage("Envoy HTTPS connect...");
 
-    if (!client.connect(host, 443))
-    {
-      TelnetPrintln("TLS FAIL" + host);
-      return;
+    TelnetPrintln( host.c_str());
+    if (!client.connected()) {
+      client.setInsecure();
+      client.setTimeout(8000);
+      if (!client.connect("envoy.local", 443))
+      // if (!client.connect(host.c_str(), 443))
+      {
+        TelnetPrintln("TLS FAIL");
+        TelnetPrintln( host.c_str());
+        Resolve_EnphaseIP();
+        return;
+      }
     }
 
     client.print(
         String("GET ") + baseRequest + " HTTP/1.1\r\n" +
-        "Host: " + host + "\r\n" +
+        "Host: " + "envoy.local" + "\r\n" +
         "Accept: application/json\r\n" +
         "Authorization: Bearer " + TokenEnphase + "\r\n" +
         "Connection: close\r\n\r\n");
+
+    // client.print(
+    //     String("GET ") + baseRequest + " HTTP/1.1\r\n" +
+    //     "Host: " + host.c_str() + "\r\n" +
+    //     "Accept: application/json\r\n" +
+    //     "Authorization: Bearer " + TokenEnphase + "\r\n" +
+    //     "Connection: close\r\n\r\n");
 
     String statusLine = client.readStringUntil('\n');
     statusLine.trim();
