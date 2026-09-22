@@ -809,7 +809,9 @@ uint8_t bestBSSID[6];  //Meilleur en dBm adresse MAC
 
 //Ethernet
 int16_t EthernetBug = 0;
+#ifdef CONFIG_ETH_USE_ESP32_EMAC
 EMACDriver driver(ETH_PHY_LAN8720, 23, 18, 16);  //
+#endif
 
 WebServer server(80);  // Simple Web Server on port 80
 
@@ -1088,6 +1090,7 @@ void setup() {
   delay(100);
   MessageCommandes();
   LireSerial();
+#ifdef CONFIG_ETH_USE_ESP32_EMAC
   Ethernet.init(driver);
   if (String(ESP.getChipModel()) == "ESP32-D0WD") {  //certains ESP32U et WT32-ETH01
     TelnetPrintln("\nAncien modèle d'ESP32 que l'on trouve sur les cartes Ethernet WT32-ETH01 (branchez le câble) et certains ESP32U");
@@ -1096,6 +1099,7 @@ void setup() {
       ESP32_Type = 10;  //On force Ethernet
     }
   }
+#endif
   TelnetPrintln("InitGPIO");
   delay(500);
   LireSerial();
@@ -1977,18 +1981,18 @@ void H_Ouvre_Equivalent(unsigned long dt) {
 // RESET REASON
 const char *get_reset_reason_text(RESET_REASON reason) {
   switch (reason) {
-    case POWERON_RESET: return "Mise sous tension (Power-On)";
-    case SW_RESET: return "Réinitialisation logicielle (Software Reset)";
-    case OWDT_RESET: return "Watchdog RTC (OWDT)";
-    case DEEPSLEEP_RESET: return "Sortie de veille profonde (Deep Sleep)";
-    case SDIO_RESET: return "Réinitialisation par SDIO";
-    case TG0WDT_SYS_RESET: return "Watchdog Timer 0 (TG0 WDT)";
-    case TG1WDT_SYS_RESET: return "Watchdog Timer 1 (TG1 WDT)";
-    case RTCWDT_SYS_RESET: return "Watchdog système RTC";
-    case INTRUSION_RESET: return "Interruption système";
-    case RTCWDT_CPU_RESET: return "Watchdog CPU RTC";
-    case RTCWDT_BROWN_OUT_RESET: return "Chute de tension (Brownout Reset)";
-    case RTCWDT_RTC_RESET: return "Watchdog RTC global";
+    // case POWERON_RESET: return "Mise sous tension (Power-On)";
+    // case SW_RESET: return "Réinitialisation logicielle (Software Reset)";
+    // case OWDT_RESET: return "Watchdog RTC (OWDT)";
+    // case DEEPSLEEP_RESET: return "Sortie de veille profonde (Deep Sleep)";
+    // case SDIO_RESET: return "Réinitialisation par SDIO";
+    // case TG0WDT_SYS_RESET: return "Watchdog Timer 0 (TG0 WDT)";
+    // case TG1WDT_SYS_RESET: return "Watchdog Timer 1 (TG1 WDT)";
+    // case RTCWDT_SYS_RESET: return "Watchdog système RTC";
+    // case INTRUSION_RESET: return "Interruption système";
+    // case RTCWDT_CPU_RESET: return "Watchdog CPU RTC";
+    // case RTCWDT_BROWN_OUT_RESET: return "Chute de tension (Brownout Reset)";
+    // case RTCWDT_RTC_RESET: return "Watchdog RTC global";
     default: return "Code inconnu";
   }
 }
