@@ -1548,9 +1548,12 @@ void loop() {
     if (tps - previousTimer2sMillis > 2000) {
       unsigned long dt = tps - previousTimer2sMillis;
       previousTimer2sMillis += 2000;  //Pour caler exactement à 2s
-      tabPw_Maison_2s[IdxStock2s] = PuissanceS_M - PuissanceI_M;
+      // tabPw_Maison_2s[IdxStock2s] = PuissanceS_M - PuissanceI_M;
+      tabPw_Maison_2s[IdxStock2s] = PactProd;
       tabPw_Triac_2s[IdxStock2s] = PuissanceS_T - PuissanceI_T;
-      tabPva_Maison_2s[IdxStock2s] = PVAS_M - PVAI_M;
+      // tabPva_Maison_2s[IdxStock2s] = PVAS_M - PVAI_M;
+      tabPva_Maison_2s[IdxStock2s] = PactConso_M;
+
       tabPva_Triac_2s[IdxStock2s] = PVAS_T - PVAI_T;
       for (int i = 0; i < NbActions; i++) {
         if (Actif[i] != MODE_INACTIF) {
@@ -1716,7 +1719,7 @@ void loop() {
     } else {
       erreurTriac = false;
     }
-    if (ESP32_Type == 0) StockMessage("! Carte ESP32 non définie !");
+    // if (ESP32_Type == 0) StockMessage("! Carte ESP32 non définie !");
     if (pSerial == 0 && (Source == "UxIx2" || Source == "UxIx3" || Source == "Linky")) StockMessage("! Port série non défini !");
   }
 
@@ -1981,18 +1984,18 @@ void H_Ouvre_Equivalent(unsigned long dt) {
 // RESET REASON
 const char *get_reset_reason_text(RESET_REASON reason) {
   switch (reason) {
-    // case POWERON_RESET: return "Mise sous tension (Power-On)";
+    case POWERON_RESET: return "Mise sous tension (Power-On)";
     // case SW_RESET: return "Réinitialisation logicielle (Software Reset)";
     // case OWDT_RESET: return "Watchdog RTC (OWDT)";
-    // case DEEPSLEEP_RESET: return "Sortie de veille profonde (Deep Sleep)";
+    case DEEPSLEEP_RESET: return "Sortie de veille profonde (Deep Sleep)";
     // case SDIO_RESET: return "Réinitialisation par SDIO";
-    // case TG0WDT_SYS_RESET: return "Watchdog Timer 0 (TG0 WDT)";
-    // case TG1WDT_SYS_RESET: return "Watchdog Timer 1 (TG1 WDT)";
-    // case RTCWDT_SYS_RESET: return "Watchdog système RTC";
-    // case INTRUSION_RESET: return "Interruption système";
-    // case RTCWDT_CPU_RESET: return "Watchdog CPU RTC";
-    // case RTCWDT_BROWN_OUT_RESET: return "Chute de tension (Brownout Reset)";
-    // case RTCWDT_RTC_RESET: return "Watchdog RTC global";
+    case TG0WDT_SYS_RESET: return "Watchdog Timer 0 (TG0 WDT)";
+    case TG1WDT_SYS_RESET: return "Watchdog Timer 1 (TG1 WDT)";
+    case RTCWDT_SYS_RESET: return "Watchdog système RTC";
+    case INTRUSION_RESET: return "Interruption système";
+    case RTCWDT_CPU_RESET: return "Watchdog CPU RTC";
+    case RTCWDT_BROWN_OUT_RESET: return "Chute de tension (Brownout Reset)";
+    case RTCWDT_RTC_RESET: return "Watchdog RTC global";
     default: return "Code inconnu";
   }
 }

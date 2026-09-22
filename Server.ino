@@ -24,6 +24,8 @@ void Init_Server() {
   server.on("/ActionsJS3", handleActionsJS3);
   server.on("/ActionsJS4", handleActionsJS4);
   server.on("/PinsActionsJS", handlePinsActionsJS);
+  // LBR to handle personal API to change hfin action
+  server.on("/ActionsUpdateAction", handleActionsUpdateAction);
   server.on("/ShowAction", handleShowAction);
   server.on("/UpdateK", handleUpdateK);
   server.on("/Brute", handleBrute);
@@ -33,7 +35,7 @@ void Init_Server() {
   server.on("/ajax_histo1an", handleAjaxHisto1an);
   server.on("/ajax_dataRMS", handleAjaxRMS);
   server.on("/ajax_dataESP32", handleAjaxESP32);
-  server.on("/ajax_data", handleAjaxData);
+  server.on("/ajax_data", handleAjaxData); // Page courbe 2mn Main
   server.on("/ajax_data10mn", handleAjaxData10mn);
   server.on("/ajax_etatActions", handleAjax_etatActions);
   server.on("/ajax_etatActionX", handleAjax_etatActionX);
@@ -411,7 +413,10 @@ void handleAjaxData() {  // Données page d'accueil
   String S = LesTemperatures();
   S = "Deb" + RS + DateLast + RS + Source_data + RS + LTARF + RS + STGEt + RS + S + RS + String(Pva_valide);
   S += GS + String(PuissanceS_M) + RS + String(PuissanceI_M) + RS + String(PVAS_M) + RS + String(PVAI_M);
-  S += RS + String(EnergieJour_M_Soutiree) + RS + String(EnergieJour_M_Injectee) + RS + String(Energie_M_Soutiree) + RS + String(Energie_M_Injectee);
+  // S += RS + String(EnergieJour_M_Soutiree) + RS + String(EnergieJour_M_Injectee) + RS + String(Energie_M_Soutiree) + RS + String(Energie_M_Injectee);
+  // LBR to add injection and production data
+  S += RS + String(EnergieJour_M_Soutiree) + RS + String(EnergieJour_M_Injectee) + RS + String(Energie_M_Soutiree) + RS + String(Energie_M_Injectee) + RS + String(PactProd) + RS + String(PactConso_M);
+
   if (Source_data == "UxIx2" || ((Source_data == "ShellyEm" || Source_data == "ShellyPro") && EnphaseSerial.toInt() != 3)) {  // UxIx2 ou Shelly monophasé avec 2 sondes
     S += GS + String(PuissanceS_T) + RS + String(PuissanceI_T) + RS + String(PVAS_T) + RS + String(PVAI_T);
     S += RS + String(EnergieJour_T_Soutiree) + RS + String(EnergieJour_T_Injectee) + RS + String(Energie_T_Soutiree) + RS + String(Energie_T_Injectee);
@@ -579,7 +584,94 @@ void handleActionsJS4() {
   server.send_P(200, "text/javascript", ActionsJS4);
 }
 
+// LBR
+// f1atbecs.local/ActionsUpdateAction?NumAction=1&hfin=60&periode=3
+// f1atbecs.local/ActionsUpdateAction?NumAction=1&periode=3&type=1 => OFF
+// f1atbecs.local/ActionsUpdateAction?NumAction=1&periode=3&type=3 => PWM
+// NumAction=1 : 1ere action (1ere ligne)
+// periode=3 premiere periode
+// hfin= hfin de la periode entre 0 et 2400
+// met hdeb(periode+1)=hfin(periode)
+// hfin=200=> 2h00 250=>2h30 1275=>12:45
+void handleActionsUpdateAction() {
+  int NumAction = server.arg("NumAction").toInt();
+// 1. Read the type parameter safely 0=NO(pas utilisé),1=OFF,2=ON,3=PW,4=Triac
+  int Hfin = server.hasArg("hfin") ? server.arg("hfin").toInt() : 0;
+  int Periode = server.hasArg("periode") ? server.arg("periode").toInt() : 0;
+  int Type = server.hasArg("type") ? server.arg("type").toInt() : 0;
+  String S = "";
+// 1. Fundamental Validation
+  if( NumAction == 0 || NumAction >= NbActions )
+  {
+    S = "Bad NumAction";
+  }
+  else if( server.hasArg("periode") && Periode >= LesActions[NumAction].NbPeriode )
+  {
+    S = "periode too high";
+  }
+  // 2. Validate Hfin ONLY if it was actually passed in the URL request
+  else if( server.hasArg("hfin") && Hfin > 2400 )
+  {
+    S = "hfin too high";
+  }
+  else if( server.hasArg("hfin") && Hfin > LesActions[NumAction].Hfin[Periode+1] )
+  {
+    S = "hfin value overlap next periode";
+  }
+  else if( server.hasArg("hfin") && Hfin <= LesActions[NumAction].Hdeb[Periode] )
+  {
+    S = "hfin value overlap Hdeb";
+  }
+  else {
+    // Validation passed! Now apply updates safely
+    S = "";
+// 2. ONLY update the type array if the value is exactly 1 (OFF) or 3 (multi-sinus)
+    if (Type == 1 || Type == 3) 
+    {
+      LesActions[NumAction].Type[Periode] = Type; 
+    }
+    if( server.hasArg("periode") && server.hasArg("hfin") )
+    {
+      LesActions[NumAction].Hfin[Periode] = Hfin;
+      LesActions[NumAction].Hdeb[Periode+1] = Hfin;
+    }
+    S += "NomAction" + RS;
+    S += String(LesActions[NumAction].Titre);
+    S += GS;
 
+    S += "NumAction" + RS;
+    S += String(NumAction);
+    S += GS;
+    if(server.hasArg("type"))
+    {
+      S += "Type" + RS;
+      S += String(Type);
+      S += GS;
+    }
+    if( server.hasArg("periode") && server.hasArg("hfin") )
+    {
+      S += "Periode" + RS;
+      S += String(Periode);
+      S += GS;
+      S += "Hfin" + RS;
+      S += String( LesActions[NumAction].Hfin[Periode] );
+      S += GS;
+      S += "Hdeb periode suivante" + RS;
+      S += String( LesActions[NumAction].Hdeb[Periode+1] );
+
+      S += "Duree H<=" + RS;
+      S += String( LesActions[NumAction].Hmax[Periode] );
+    }
+  }
+  EcritureEnROM();
+  // int adresse_max = EcritureEnROM();
+  // S += "adresse_max EEPROM" + RS;
+  // S += String( adresse_max );
+
+  S += GS;
+  // server.sendHeader("Connection", "close");
+  server.send(200, "text/html", S);
+}
 
 void handlePinsActionsJS() {  // Pins disponibles
   String S = "var Pins=[0,-1];";
