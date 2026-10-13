@@ -814,7 +814,9 @@ uint8_t bestBSSID[6];  //Meilleur en dBm adresse MAC
 
 //Ethernet
 int16_t EthernetBug = 0;
+#ifdef CONFIG_ETH_USE_ESP32_EMAC
 EMACDriver driver(ETH_PHY_LAN8720, 23, 18, 16);  //
+#endif
 
 WebServer server(80);  // Simple Web Server on port 80
 
@@ -1089,6 +1091,7 @@ print_reset_reason();
   delay(100);
   MessageCommandes();
   LireSerial();
+#ifdef CONFIG_ETH_USE_ESP32_EMAC
   Ethernet.init(driver);
   if (String(ESP.getChipModel()) == "ESP32-D0WD") {  //certains ESP32U et WT32-ETH01
     TelnetPrintln("\nAncien modèle d'ESP32 que l'on trouve sur les cartes Ethernet WT32-ETH01 (branchez le câble) et certains ESP32U");
@@ -1097,6 +1100,7 @@ print_reset_reason();
       ESP32_Type = 10;  //On force Ethernet
     }
   }
+#endif
   TelnetPrintln("InitGPIO");
   delay(500);
   LireSerial();
@@ -1545,9 +1549,12 @@ void loop() {
     if (tps - previousTimer2sMillis > 2000) {
       unsigned long dt = tps - previousTimer2sMillis;
       previousTimer2sMillis += 2000;  //Pour caler exactement à 2s
-      tabPw_Maison_2s[IdxStock2s] = PuissanceS_M - PuissanceI_M;
+      // tabPw_Maison_2s[IdxStock2s] = PuissanceS_M - PuissanceI_M;
+      tabPw_Maison_2s[IdxStock2s] = PactProd;
       tabPw_Triac_2s[IdxStock2s] = PuissanceS_T - PuissanceI_T;
-      tabPva_Maison_2s[IdxStock2s] = PVAS_M - PVAI_M;
+      // tabPva_Maison_2s[IdxStock2s] = PVAS_M - PVAI_M;
+      tabPva_Maison_2s[IdxStock2s] = PactConso_M;
+
       tabPva_Triac_2s[IdxStock2s] = PVAS_T - PVAI_T;
       for (int i = 0; i < NbActions; i++) {
         if (Actif[i] != MODE_INACTIF) {
@@ -1713,7 +1720,7 @@ void loop() {
     } else {
       erreurTriac = false;
     }
-    if (ESP32_Type == 0) StockMessage("! Carte ESP32 non définie !");
+    // if (ESP32_Type == 0) StockMessage("! Carte ESP32 non définie !");
     if (pSerial == 0 && (Source == "UxIx2" || Source == "UxIx3" || Source == "Linky")) StockMessage("! Port série non défini !");
   }
 
